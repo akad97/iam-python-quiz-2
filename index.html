@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz Django – Chapitres 0 à 3</title>
+<style>
+:root{--n:#14213d;--b:#2f6db5;--a:#e9b949;--bg:#fbfaf6;--r:#b3402a;--g:#2e7d5b;--l:#d9dce3}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,sans-serif;background:var(--bg);color:var(--n);-webkit-user-select:none;user-select:none}
+h1,h2{font-family:Georgia,serif;margin:.2em 0}
+main{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+.card{background:#fff;border:1px solid var(--l);border-radius:10px;padding:20px;margin:14px 0}
+.hide{display:none!important}
+ul{padding-left:20px}li{margin:6px 0}
+label{display:block;font-weight:600;margin:12px 0 4px}
+select{width:100%;padding:10px;border:1px solid #b9bfcc;border-radius:6px;font:inherit;background:#fff;color:var(--n)}
+select:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+select.bad{border-color:var(--r);background:#fdeeea}
+input[type=text]{width:100%;padding:10px;border:1px solid #b9bfcc;border-radius:6px;font:inherit;-webkit-user-select:text;user-select:text}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--n);background:#fff;color:var(--n);padding:10px 16px}
+button.p{background:var(--n);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.warn{background:#fdf0cf;border-left:4px solid var(--a);padding:10px 14px;border-radius:4px}
+.bar{position:sticky;top:0;z-index:5;background:var(--n);color:#fff;display:flex;justify-content:space-between;gap:10px;padding:10px 16px;font-weight:600}
+.bar.low #tm{color:#ffb4a2}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;border:1.5px solid var(--l)}
+.opt.sel{border-color:var(--b);background:#eaf1fa;font-weight:600}
+.q{font-size:1.1em;font-weight:600}
+code{font-family:Consolas,monospace;background:#eef0f4;padding:1px 5px;border-radius:4px;font-size:.95em;white-space:pre-wrap}
+#grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+#grid button{width:38px;padding:6px 0;font-size:.9em}
+#grid .ok{background:#cfe0f5;border-color:var(--b)}
+#grid .cur{outline:3px solid var(--a)}
+.nav{display:flex;justify-content:space-between;margin-top:16px}
+#modal{position:fixed;inset:0;background:rgba(20,33,61,.75);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+#modal .card{max-width:440px}
+.req{color:var(--r)}input.bad{border-color:var(--r);background:#fdeeea}
+code.blk{display:block;margin-top:12px;padding:12px 14px;font-weight:400;white-space:pre;overflow-x:auto;font-size:.9em;line-height:1.5}
+.big{font:700 3em Georgia,serif}
+</style></head><body>
+<div class="bar hide" id="bar"><span id="who"></span><span>Q <span id="qn"></span>/20</span><span>⏱ <span id="tm">30:00</span></span><span>Sorties : <span id="so">0</span></span></div>
+<main>
+<section id="intro">
+<h1>Quiz Django – Chapitres 0 à 3</h1>
+<p>Mise en place et architecture MVT, requête et réponse (vues et URLs), templates, modèles et base de données.</p>
+<div class="card"><h2>Règles du quiz</h2><ul>
+<li><b>20 questions</b> à choix multiple, une seule bonne réponse, <b>1 point</b> chacune : note sur 20.</li>
+<li><b>Durée : 30 minutes.</b> Le chronomètre démarre au clic sur « Commencer ». À zéro, le quiz est validé automatiquement.</li>
+<li>Vous pouvez naviguer entre les questions et changer une réponse jusqu’à la validation finale.</li>
+<li><b>Ne quittez jamais la page</b> : changer d’onglet, de fenêtre ou d’application, ou actualiser la page, compte comme une <b>sortie</b>.</li>
+<li><b>1ʳᵉ sortie</b> : avertissement, sans pénalité. <b>Dès la 2ᵉ sortie</b> : <b>−1 point par sortie</b>. <b>À la 3ᵉ sortie</b> : le quiz est clos et noté immédiatement.</li>
+<li>Copier, coller et clic droit sont désactivés. <b>Un seul envoi par code étudiant</b> : un code déjà utilisé ne peut plus démarrer le quiz.</li>
+<li>Votre résultat est envoyé automatiquement à l’enseignant à la fin.</li></ul>
+<div class="warn">Fermez les autres applications et désactivez les notifications avant de commencer.</div></div>
+<div class="card"><h2>Votre identité</h2>
+<div class="row"><div><label for="nom">Nom <span class="req">*</span></label><input type="text" id="nom" autocomplete="off" required aria-required="true"></div>
+<div><label for="prenom">Prénom <span class="req">*</span></label><input type="text" id="prenom" autocomplete="off" required aria-required="true"></div>
+<div><label for="classe">Classe <span class="req">*</span></label><select id="classe"><option value="">Choisir…</option><option>BIG 3 A</option><option>BIG 3 B</option></select></div>
+<div><label for="code">Code étudiant <span class="req">*</span></label><input type="text" id="code" autocomplete="off"></div></div>
+<label style="font-weight:400;margin-top:16px"><input type="checkbox" id="ok"> J’ai lu et j’accepte les règles ci-dessus.</label>
+<p id="err" style="color:var(--r);min-height:1.5em"></p>
+<button class="p" id="go">Commencer le quiz</button></div>
+</section>
+<section id="quiz" class="hide">
+<div class="card"><p id="qt" class="q"></p><div id="ops"></div>
+<div class="nav"><button id="pv">Précédent</button><button id="nx" class="p">Suivant</button></div>
+<div id="grid"></div></div></section>
+<section id="end" class="hide">
+<div class="card"><h2 id="eh">Quiz terminé</h2><div class="big" id="sc"></div><p id="dt"></p><p id="st" class="warn"></p>
+<button id="rs">Renvoyer le résultat</button> <button id="dl">Télécharger le résultat (CSV)</button></div></section>
+</main>
+<div id="modal" class="hide"><div class="card"><h2 id="mh"></h2><p id="mp"></p><div id="mb"></div></div></div>
+<script>
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzXntdZ5crNoJPEuLf2GtvLc9FpPj7P0EJF7vNwQ8pLmpMP5sr3_Gq_kEe6jK3p3RWn_g/exec";               // URL du script Google Apps Script (voir explications)
+const DUREE=30*60, MAXS=3, KEY="quizdj_ch03_v1", QUIZ="Django ch. 0-3";
+// [question, [bonne réponse, faux, faux, faux]]
+const Q=[
+["Dans l'architecture MVT de Django, quel composant reçoit la requête HTTP, interagit avec les modèles si besoin et choisit le template à utiliser ?",["La Vue","Le Modèle","Le Template","Le fichier `manage.py`"]],
+["Pourquoi crée-t-on un environnement virtuel (`venv`) pour chaque projet Django ?",["Pour isoler les bibliothèques et leurs versions propres à chaque projet et éviter les conflits","Pour accélérer l'exécution du serveur de développement","Pour pouvoir utiliser Django sans installer Python","Pour rendre le projet accessible sur Internet"]],
+["Dans la commande ci-dessous, à quoi sert le point final ? `\ndjango-admin startproject config .`",["Il crée le projet dans le dossier actuel, sans dossier supplémentaire","Il lance le serveur juste après la création","Il crée automatiquement une application nommée `config`","Il active l'environnement virtuel"]],
+["Quel fichier regroupe les réglages globaux du projet (applications installées, base de données, chemins des templates…) ?",["`config/settings.py`","`manage.py`","`config/urls.py`","`config/wsgi.py`"]],
+["Que faut-il retenir du serveur lancé avec `python manage.py runserver` ?",["Il sert uniquement au développement : il n'est ni assez performant ni assez sécurisé pour la production","C'est le serveur à utiliser pour mettre un site public en production","Il refuse de démarrer tant que les migrations ne sont pas appliquées","Il s'arrête avec la commande `deactivate`"]],
+["Quelle affirmation décrit correctement la différence entre un projet et une application Django ?",["Le projet regroupe la configuration et les applications ; une application gère une fonctionnalité précise et peut être réutilisée dans d'autres projets","Un projet ne peut contenir qu'une seule application","Une application contient le fichier `settings.py` du site","Projet et application sont deux noms pour la même chose"]],
+["Quelle commande crée une nouvelle application nommée `pages` dans un projet existant ?",["`python manage.py startapp pages`","`django-admin startproject pages`","`python manage.py createapp pages`","`pip install pages`"]],
+["Tu viens de créer l'application `pages`. Que faut-il faire pour que Django la prenne en compte ?",["Ajouter `'pages'` à la liste `INSTALLED_APPS` dans `config/settings.py`","Rien, Django détecte automatiquement les nouveaux dossiers","Lancer `python manage.py migrate pages`","Ajouter `'pages'` dans `pages/apps.py`"]],
+["Quel nom complète les deux trous de cette vue ? `\n# pages/views.py\nfrom django.http import ________\n\ndef home_page_view(request):\n    return ________(\"<h1>Ceci est ma première page Django.</h1>\")`",["`HttpResponse`","`render`","`path`","`include`"]],
+["Quel est le rôle de la ligne `path('', include('pages.urls'))` dans ce fichier ? `\n# config/urls.py\nurlpatterns = [\n    path('admin/', admin.site.urls),\n    path('', include('pages.urls')),\n]`",["Elle confie à `pages/urls.py` les URLs qui commencent par le préfixe vide, c'est-à-dire la racine du site","Elle crée le fichier `pages/urls.py`","Elle redirige toutes les URLs vers l'interface d'administration","Elle donne le nom `home` à la page d'accueil"]],
+["Dans la configuration `TEMPLATES` de `settings.py`, que permet l'option `'APP_DIRS': True` ?",["Elle permet à Django de chercher aussi des templates dans un sous-dossier `templates/` de chaque application installée","Elle désactive le dossier `templates` situé à la racine du projet","Elle crée automatiquement un template pour chaque application","Elle indique le chemin absolu du dossier `templates` à la racine du projet"]],
+["Dans cet appel, que doit être `context` ? `\nreturn render(request, 'home.html', context)`",["Un dictionnaire de données que le template pourra afficher","Le chemin vers le fichier `home.html`","Un objet `HttpResponse` déjà construit","La liste des URLs de l'application"]],
+["Si `couleurs_preferees` vaut `[]`, qu'affiche ce template ? `\n<ul>\n  {% for couleur in couleurs_preferees %}\n    <li>{{ couleur }}</li>\n  {% empty %}\n    <li>Vous n'avez pas de couleurs préférées.</li>\n  {% endfor %}\n</ul>`",["Un seul élément : « Vous n'avez pas de couleurs préférées. »","Une liste vide, sans aucun élément","Une erreur de template","Le texte `[]`"]],
+["La vue passe `context = {'nom_utilisateur': 'Bob', 'age': 25}`. Qu'affiche la ligne ci-dessous ? `\n{{ nom_utilisateur|upper }} a {{ age|add:\"5\" }} ans`",["`BOB a 30 ans`","`Bob a 25 ans`","`bob a 30 ans`","`BOB a 255 ans`"]],
+["`base.html` contient `{% block content %}<p>Contenu par défaut…</p>{% endblock %}`. Un template enfant commence par `{% extends 'base.html' %}` mais ne redéfinit pas le bloc `content`. Que voit-on à cet endroit ?",["Le contenu par défaut défini dans `base.html`","Rien : la zone reste vide","Une erreur, car chaque bloc doit être redéfini","Le contenu complet de `home.html`"]],
+["Quel est le rôle de l'ORM (Object-Relational Mapper) de Django ?",["Manipuler la base de données avec des objets Python, l'ORM traduisant ces opérations en requêtes SQL","Générer automatiquement les templates HTML à partir des modèles","Remplacer la base de données par des fichiers Python","Diriger chaque URL vers la bonne vue"]],
+["Tu viens d'ajouter un champ dans `pages/models.py`. Quelle suite de commandes met la base de données à jour ?",["`python manage.py makemigrations` puis `python manage.py migrate`","`python manage.py migrate` puis `python manage.py makemigrations`","`python manage.py runserver` uniquement","`python manage.py shell` puis `save()`"]],
+["Quand ce champ est-il rempli automatiquement ? `\ncreated_at = models.DateTimeField(auto_now_add=True)`",["Uniquement lors de la création de l'objet","À chaque appel de `save()` sur l'objet","À chaque lecture de l'objet","Jamais : il faut toujours fournir la date"]],
+["Aucun message n'a la clé primaire 99. Que se passe-t-il ? `\nmsg = ContactMessage.objects.get(pk=99)`",["Django lève l'exception `ContactMessage.DoesNotExist`","`msg` vaut `None`","`msg` est un QuerySet vide","Django crée un nouveau message avec `pk=99`"]],
+["Que renvoie cette instruction ? `\nContactMessage.objects.filter(is_treated=False).order_by('-created_at')`",["Un QuerySet des messages non traités, du plus récent au plus ancien","Un seul objet : le message non traité le plus récent","Un QuerySet des messages non traités, du plus ancien au plus récent","Le nombre de messages non traités"]]
+];
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/`([^`]+)`/g,(m,c)=>c[0]==="\n"?'<code class="blk">'+c.slice(1)+"</code>":"<code>"+c+"</code>");
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pad=n=>String(n).padStart(2,"0");
+let S=null,tick=null,away=false;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function show(id){["intro","quiz","end"].forEach(x=>$(x).classList.toggle("hide",x!==id));$("bar").classList.toggle("hide",id!=="quiz")}
+function modal(h,p,btns){$("mh").textContent=h;$("mp").innerHTML=p;const b=$("mb");b.innerHTML="";btns.forEach(([t,f,c])=>{const e=document.createElement("button");e.textContent=t;if(c)e.className="p";e.onclick=()=>{$("modal").classList.add("hide");f&&f()};b.appendChild(e);b.appendChild(document.createTextNode(" "))});$("modal").classList.remove("hide")}
+$("go").onclick=()=>{
+  const id={nom:$("nom").value.trim(),prenom:$("prenom").value.trim(),classe:$("classe").value.trim(),code:$("code").value.trim().toUpperCase().replace(/\s+/g,"")};
+  ["nom","prenom","classe","code"].forEach(k=>$(k).classList.remove("bad"));
+  const nomOk=v=>v.replace(/[^A-Za-zÀ-ÿ]/g,"").length>=2;
+  const bad=[];
+  if(!nomOk(id.nom))bad.push("nom");
+  if(!nomOk(id.prenom))bad.push("prenom");
+  if(!id.classe)bad.push("classe");
+  if(!id.code)bad.push("code");
+  if(bad.length){bad.forEach(k=>$(k).classList.add("bad"));$(bad[0]).focus();
+    $("err").textContent=(bad.includes("nom")||bad.includes("prenom"))?"Le nom et le prénom sont obligatoires (au moins 2 lettres chacun).":"Renseignez tous les champs.";return}
+  if(!$("ok").checked){$("err").textContent="Cochez la case pour accepter les règles.";return}
+  $("err").textContent="";const go=$("go");go.disabled=true;go.textContent="Vérification du code étudiant…";
+  verifierCode(id.code).then(deja=>{
+    go.disabled=false;go.textContent="Commencer le quiz";
+    if(deja===true){$("code").classList.add("bad");$("code").focus();
+      $("err").textContent="Ce code étudiant a déjà envoyé une copie pour ce quiz. Un seul envoi est autorisé par code : adressez-vous à l’enseignant.";return}
+    modal("Prêt à commencer ?",`Code <b>${esc(id.code)}</b> accepté. Le chronomètre de 30 minutes démarre dès que vous cliquez sur « Commencer ».`,
+      [["Annuler",null],["Commencer",()=>{
+        S={id,ord:shuf(Q.map((_,i)=>i)),opt:Q.map(()=>shuf([0,1,2,3])),rep:Q.map(()=>-1),i:0,debut:Date.now(),fin:Date.now()+DUREE*1000,sorties:0,done:false};
+        save();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+        start()},1]]);
+  });
+};
+// --- Un seul envoi par code : demande au script Google si ce code a déjà envoyé une copie ---
+function verifierCode(code){return new Promise(res=>{
+  if(!SCRIPT_URL)return res(null);
+  const cb="verif_"+Date.now(),s=document.createElement("script");let fini=false,t;
+  const fin=v=>{if(fini)return;fini=true;clearTimeout(t);try{delete window[cb]}catch(e){window[cb]=undefined}s.remove();res(v)};
+  window[cb]=d=>fin(d&&typeof d.deja==="boolean"?d.deja:null);
+  s.onerror=()=>fin(null);s.onload=()=>setTimeout(()=>fin(null),100);t=setTimeout(()=>fin(null),8000);
+  s.src=SCRIPT_URL+"?action=verifier&quiz="+encodeURIComponent(QUIZ)+"&code="+encodeURIComponent(code)+"&callback="+cb;
+  document.head.appendChild(s);
+})}
+function start(){show("quiz");$("who").textContent=S.id.prenom+" "+S.id.nom;render();clearInterval(tick);tick=setInterval(clock,500);clock()}
+function clock(){const l=Math.ceil((S.fin-Date.now())/1000);if(l<=0){finish("temps");return}
+  $("tm").textContent=pad(Math.floor(l/60))+":"+pad(l%60);$("bar").classList.toggle("low",l<=300);$("so").textContent=S.sorties}
+function render(){
+  const qi=S.ord[S.i];$("qn").textContent=S.i+1;$("qt").innerHTML=esc(Q[qi][0]);
+  const o=$("ops");o.innerHTML="";
+  S.opt[qi].forEach((k,n)=>{const b=document.createElement("button");b.className="opt"+(S.rep[qi]===k?" sel":"");
+    b.innerHTML=String.fromCharCode(65+n)+". "+esc(Q[qi][1][k]);b.onclick=()=>{S.rep[qi]=k;save();render()};o.appendChild(b)});
+  $("pv").disabled=S.i===0;$("nx").textContent=S.i===19?"Terminer le quiz":"Suivant";
+  const g=$("grid");g.innerHTML="";
+  S.ord.forEach((q,n)=>{const b=document.createElement("button");b.textContent=n+1;b.className=(S.rep[q]>-1?"ok ":"")+(n===S.i?"cur":"");b.onclick=()=>{S.i=n;save();render()};g.appendChild(b)});
+}
+$("pv").onclick=()=>{if(S.i>0){S.i--;save();render()}};
+$("nx").onclick=()=>{
+  if(S.i<19){S.i++;save();render();return}
+  const na=S.rep.filter(r=>r<0).length;
+  modal("Terminer le quiz ?",na?`Il reste <b>${na}</b> question(s) sans réponse. La validation est définitive.`:"La validation est définitive.",[["Revenir",null],["Valider",()=>finish("validation"),1]]);
+};
+// --- Suivi des sorties ---
+function out(){if(!S||S.done||away)return;away=true;S.sorties++;save();$("so").textContent=S.sorties;if(S.sorties>=MAXS)finish("sorties")}
+function back(){if(!away)return;away=false;if(!S||S.done)return;warn()}
+function warn(){
+  const k=S.sorties,left=MAXS-k;
+  if(k===1)modal("⚠ Avertissement","Vous avez quitté la page (sortie n° 1). <b>Aucune pénalité cette fois.</b> À partir de la prochaine sortie : <b>−1 point par sortie</b>.",[["J’ai compris",null,1]]);
+  else modal("Pénalité : −1 point",`Sortie n° ${k}. Pénalité totale : <b>−${k-1} point(s)</b>. `+(left===1?"<b>Une sortie de plus et le quiz sera clos.</b>":`Il reste ${left-1} sortie(s) avant la clôture.`),[["J’ai compris",null,1]]);
+}
+document.addEventListener("visibilitychange",()=>document.hidden?out():back());
+window.addEventListener("blur",out);window.addEventListener("focus",back);
+["contextmenu","copy","cut","paste"].forEach(e=>document.addEventListener(e,ev=>{if(!(ev.target.tagName==="INPUT"))ev.preventDefault()}));
+// --- Fin et résultats ---
+function result(){
+  const sc=S.rep.reduce((a,r)=>a+(r===0?1:0),0),pen=Math.max(0,S.sorties-1);
+  return{date:new Date().toLocaleString("fr-FR"),nom:S.id.nom,prenom:S.id.prenom,classe:S.id.classe,code:S.id.code,
+    score:sc,penalites:pen,note:Math.max(0,sc-pen),sorties:S.sorties,duree_s:Math.round((Math.min(Date.now(),S.fin)-S.debut)/1000),
+    motif:S.motif||"",reponses:S.rep.map(r=>r<0?"-":r===0?"V":"F").join(""),quiz:QUIZ};
+}
+function finish(m){
+  if(S.done)return;S.done=true;S.motif=m;save();clearInterval(tick);
+  try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}
+  $("modal").classList.add("hide");showEnd();send();
+}
+function showEnd(){
+  const r=result();show("end");
+  $("eh").textContent=S.motif==="sorties"?"Quiz clos : trop de sorties":S.motif==="temps"?"Temps écoulé":"Quiz terminé";
+  $("sc").textContent=r.note+" / 20";
+  $("dt").innerHTML=`${r.prenom} ${r.nom} (${r.classe}) : ${r.score} bonne(s) réponse(s), pénalités −${r.penalites}, ${r.sorties} sortie(s).`;
+}
+async function send(){
+  const st=$("st");
+  if(!SCRIPT_URL){st.textContent="Envoi automatique non configuré : téléchargez le CSV et remettez-le à l’enseignant.";return}
+  st.textContent="Envoi en cours…";
+  try{await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(result())});
+    st.textContent="Résultat envoyé à l’enseignant. Vous pouvez fermer cette page."}
+  catch(e){st.textContent="Échec de l’envoi. Vérifiez votre connexion, puis cliquez sur « Renvoyer le résultat »."}
+}
+$("rs").onclick=send;
+$("dl").onclick=()=>{const r=result(),k=Object.keys(r);
+  const csv=k.join(";")+"\n"+k.map(x=>'"'+String(r[x]).replace(/"/g,'""')+'"').join(";");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));
+  a.download=`quiz_django_${r.nom}_${r.prenom}.csv`.replace(/\s+/g,"_");a.click()};
+// --- Reprise après actualisation : compte comme une sortie ---
+(function(){
+  let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+  if(!raw)return;
+  try{S=JSON.parse(raw)}catch(e){S=null;return}
+  if(S.done){showEnd();$("st").textContent="Ce quiz a déjà été passé sur cet appareil.";return}
+  if(Date.now()>=S.fin){finish("temps");return}
+  S.sorties++;save();
+  if(S.sorties>=MAXS){finish("sorties");return}
+  start();warn();
+})();
+</script></body></html>
